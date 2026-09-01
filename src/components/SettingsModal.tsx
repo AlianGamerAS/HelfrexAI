@@ -490,6 +490,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             })}
           </div>
         </div>
+
+        {/* Windows C++ Native Desktop Compilation Info */}
+        <div className={`p-5 rounded-2xl border ${
+          isLight ? 'bg-indigo-50/70 border-indigo-200 text-slate-800' : 'bg-indigo-950/20 border-indigo-800/60 text-slate-200'
+        }`}>
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="p-2 rounded-xl bg-indigo-600 text-white font-mono text-xs font-bold">
+              C++
+            </div>
+            <div>
+              <h3 className={`text-sm font-bold ${isLight ? 'text-indigo-950' : 'text-white'}`}>
+                Visual Studio Community (Windows .EXE)
+              </h3>
+              <p className="text-xs text-indigo-500 dark:text-indigo-400 font-mono">
+                windows-cpp/HelfrexAI.sln
+              </p>
+            </div>
+          </div>
+          <p className="text-xs leading-relaxed opacity-90 mb-3">
+            Tüm C++20 Win32, DirectX/DXGI VRAM algılama ve WebView2 bağımsız masaüstü kodları <code>windows-cpp/</code> klasöründe hazırlandı. Visual Studio Community ile doğrudan açıp <strong>Release (x64)</strong> modunda <code>HelfrexAI.exe</code> olarak derleyebilirsiniz.
+          </p>
+          <div className="text-[11px] font-mono p-2.5 rounded-lg bg-black/40 text-emerald-400 border border-white/10 select-all">
+            Visual Studio &rarr; Open Solution &rarr; windows-cpp/HelfrexAI.sln &rarr; Build Solution (Ctrl+Shift+B)
+          </div>
+        </div>
       </div>
     </div>
   );
