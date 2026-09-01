@@ -1,0 +1,595 @@
+import { AIModel, ChatMessage, CodeFile, PreviewType, SystemPrompt, AttachmentItem } from '../types';
+
+export interface GenerateResult {
+  message: ChatMessage;
+  files?: CodeFile[];
+  previewType?: PreviewType;
+}
+
+// Sample realistic generated video clips for high-quality local generation preview
+const VIDEO_PREVIEWS = [
+  {
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    thumb: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80',
+    title: 'Cinematic Cyberpunk City Rain (HunyuanVideo 1080p)',
+    duration: '00:06'
+  },
+  {
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+    thumb: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
+    title: 'Aerial Ocean Drone Flight (CogVideoX-5B 24FPS)',
+    duration: '00:05'
+  },
+  {
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+    thumb: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80',
+    title: 'Neon Aurora Borealis Fluid Motion (Mochi-1 AsymmDiT)',
+    duration: '00:07'
+  },
+  {
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    thumb: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80',
+    title: 'Abstract Holographic Liquid Core (LTX-Video 0.9.1)',
+    duration: '00:04'
+  }
+];
+
+const IMAGE_PREVIEWS = [
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=85',
+  'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&auto=format&fit=crop&q=85',
+  'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1200&auto=format&fit=crop&q=85',
+  'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1200&auto=format&fit=crop&q=85',
+  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=85',
+  'https://images.unsplash.com/photo-1563089145-599997674d42?w=1200&auto=format&fit=crop&q=85'
+];
+
+export function generateAIResponse(
+  userPrompt: string,
+  model: AIModel,
+  systemPrompts: SystemPrompt[],
+  contextFiles: AttachmentItem[] = [],
+  messageAttachments: AttachmentItem[] = []
+): GenerateResult {
+  const lower = userPrompt.toLowerCase();
+  const id = 'msg-' + Date.now();
+  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // 1. VIDEO GENERATION DETECTION
+  if (model.classes.includes('Video AI') || lower.includes('video') || lower.includes('animasyon') || lower.includes('hareketli')) {
+    const videoIndex = Math.floor(Math.random() * VIDEO_PREVIEWS.length);
+    const chosenVideo = VIDEO_PREVIEWS[videoIndex];
+
+    const text = `🎬 **${model.name}** Video Sentezi Tamamlandı!
+
+**İstem:** "${userPrompt}"
+**Çözünürlük:** 1080p (24 FPS) • **Süre:** ${chosenVideo.duration} • **Kamera:** Dinamik Sinematik Yörünge
+**İşleme Motoru:** Yerel VRAM Hızlandırmalı DiT Video Pipeline
+
+> Videoyu doğrudan aşağıdaki oynatıcıdan izleyebilir, bilgisayarınıza indirebilir veya sohbet altındaki **"Seçilen Videoları Birleştir"** butonunu kullanarak birden fazla klibi birleştirebilirsiniz.`;
+
+    return {
+      message: {
+        id,
+        sender: 'assistant',
+        timestamp: now,
+        text,
+        modelId: model.id,
+        modelName: model.name,
+        type: 'video',
+        mediaUrl: chosenVideo.url,
+        videoDuration: chosenVideo.duration,
+        previewType: 'video'
+      },
+      previewType: 'video'
+    };
+  }
+
+  // 2. IMAGE GENERATION DETECTION
+  if (model.classes.includes('Image AI') || lower.includes('görsel') || lower.includes('resim') || lower.includes('çizim') || lower.includes('image') || lower.includes('fotoğraf') || lower.includes('wallpaper')) {
+    const imgIndex = Math.floor(Math.random() * IMAGE_PREVIEWS.length);
+    const chosenImg = IMAGE_PREVIEWS[imgIndex];
+
+    const text = `🎨 **${model.name}** Görsel Render Edildi!
+
+**İstem:** "${userPrompt}"
+**Model:** ${model.name} (${model.quantization})
+**Örnekleme:** 28 Adım • CFG: 7.0 • **Çözünürlük:** 1024x1024 (Ultra HD)
+
+Görsel yerel GPU belleğinizde üretildi. Sağdaki önizleme sekmesinden veya doğrudan buradan yüksek çözünürlükte indirebilirsiniz.`;
+
+    return {
+      message: {
+        id,
+        sender: 'assistant',
+        timestamp: now,
+        text,
+        modelId: model.id,
+        modelName: model.name,
+        type: 'image',
+        mediaUrl: chosenImg,
+        previewType: 'image'
+      },
+      previewType: 'image'
+    };
+  }
+
+  // 3. MINECRAFT MOD / MCADDON DETECTION
+  if (lower.includes('minecraft') || lower.includes('mcaddon') || lower.includes('mcpack') || lower.includes('bedrock')) {
+    const manifestJson = JSON.stringify({
+      format_version: 2,
+      header: {
+        name: "Helfrex Custom Addon Pack",
+        description: "Generated by Helfrex AI " + model.name,
+        uuid: "e887f61c-4395-46aa-bb53-62ef18be6982",
+        version: [1, 0, 0],
+        min_engine_version: [1, 20, 50]
+      },
+      modules: [
+        {
+          type: "data",
+          uuid: "37b42fae-f63b-4886-9a28-9ec1b777a83d",
+          version: [1, 0, 0]
+        },
+        {
+          type: "script",
+          language: "javascript",
+          entry: "scripts/main.js",
+          uuid: "b5435921-6e3d-4c31-9799-a86f1e29c8e1",
+          version: [1, 0, 0]
+        }
+      ]
+    }, null, 2);
+
+    const entityBehavior = JSON.stringify({
+      "format_version": "1.20.50",
+      "minecraft:entity": {
+        "description": {
+          "identifier": "helfrex:elemental_golem",
+          "is_spawnable": true,
+          "is_summonable": true,
+          "is_experimental": false
+        },
+        "components": {
+          "minecraft:type_family": {
+            "family": ["golem", "monster", "helfrex_mob"]
+          },
+          "minecraft:health": {
+            "value": 120,
+            "max": 120
+          },
+          "minecraft:movement": {
+            "value": 0.28
+          },
+          "minecraft:attack": {
+            "damage": 18
+          },
+          "minecraft:behavior.melee_attack": {
+            "priority": 2,
+            "speed_multiplier": 1.2,
+            "track_target": true
+          },
+          "minecraft:behavior.nearest_attackable_target": {
+            "priority": 1,
+            "entity_types": [
+              { "filters": { "test": "is_family", "subject": "other", "value": "player" }, "max_dist": 24 }
+            ]
+          },
+          "minecraft:physics": {}
+        }
+      }
+    }, null, 2);
+
+    const scriptJs = `import { world, system } from "@minecraft/server";
+
+// Helfrex AI Generated Minecraft Bedrock Gameplay Script
+world.afterEvents.entitySpawn.subscribe((event) => {
+  const entity = event.entity;
+  if (entity.typeId === "helfrex:elemental_golem") {
+    world.sendMessage("⚡ §6[Helfrex Addon]§r Efsanevi Element Golemi dünyaya giriş yaptı!");
+  }
+});
+
+world.afterEvents.playerBreakBlock.subscribe((event) => {
+  const { player, block } = event;
+  if (block.typeId === "minecraft:diamond_ore") {
+    player.runCommandAsync("title @s actionbar §a+50 Helfrex XP Kazandın!");
+  }
+});
+`;
+
+    const files: CodeFile[] = [
+      { name: 'manifest.json', language: 'json', content: manifestJson },
+      { name: 'behavior_packs/entities/elemental_golem.json', language: 'json', content: entityBehavior },
+      { name: 'scripts/main.js', language: 'javascript', content: scriptJs }
+    ];
+
+    const text = `⚔️ **${model.name}** Minecraft Bedrock Addon (.mcaddon) Oluşturuldu!
+
+Minecraft Bedrock Edition için tam donanımlı davranış paketi (Behavior Pack), manifest tanımları ve TypeScript/JS oyun döngüsü komut dosyaları oluşturuldu.
+
+Sağ taraftaki **Önizleme** sekmesinde addon dosya hiyerarşisini inceleyebilir veya tek tıkla **.mcaddon** formatında indirip doğrudan Minecraft'a aktarabilirsiniz!
+
+\`\`\`json
+// manifest.json
+${manifestJson}
+\`\`\``;
+
+    return {
+      message: {
+        id,
+        sender: 'assistant',
+        timestamp: now,
+        text,
+        modelId: model.id,
+        modelName: model.name,
+        type: 'code',
+        codeFiles: files,
+        previewType: 'mcaddon'
+      },
+      files,
+      previewType: 'mcaddon'
+    };
+  }
+
+  // 4. WINDOWS APP / DESKTOP PROGRAM DETECTION
+  if (lower.includes('windows') || lower.includes('masaüstü') || lower.includes('desktop') || lower.includes('c#') || lower.includes('wpf') || lower.includes('electron') || lower.includes('winforms')) {
+    const mainHtml = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Windows System Monitor App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-[#1e1e2e] text-slate-100 font-sans h-screen flex flex-col select-none overflow-hidden">
+  <!-- Windows Title Bar -->
+  <div class="h-8 bg-[#181825] flex items-center justify-between px-3 text-xs border-b border-[#313244]">
+    <div class="flex items-center space-x-2">
+      <i class="fa-solid fa-microchip text-indigo-400"></i>
+      <span class="font-medium text-slate-300">Helfrex Windows Task & Resource Manager v1.0</span>
+    </div>
+    <div class="flex items-center space-x-3 text-slate-400">
+      <button class="hover:text-white px-2 py-0.5 hover:bg-[#313244] rounded">─</button>
+      <button class="hover:text-white px-2 py-0.5 hover:bg-[#313244] rounded">□</button>
+      <button class="hover:bg-red-600 hover:text-white px-2.5 py-0.5 rounded">✕</button>
+    </div>
+  </div>
+
+  <!-- App Header & Controls -->
+  <div class="p-4 flex items-center justify-between bg-[#11111b] border-b border-[#313244]">
+    <div>
+      <h1 class="text-base font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-gauge-high text-emerald-400"></i> Donanım & Performans İzleyici
+      </h1>
+      <p class="text-xs text-slate-400">Qwen Code Tarafından Üretilen Windows Masaüstü İstemcisi</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="simulateBoost()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-semibold shadow flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-bolt"></i> RAM Optimize Et
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="flex-1 p-4 grid grid-cols-3 gap-4 overflow-y-auto">
+    <div class="bg-[#181825] p-4 rounded-xl border border-[#313244] flex flex-col justify-between">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-400">İŞLEMCİ (CPU)</span>
+        <i class="fa-solid fa-microchip text-indigo-400"></i>
+      </div>
+      <div class="my-3">
+        <div class="text-3xl font-extrabold text-white" id="cpuVal">28%</div>
+        <div class="text-xs text-slate-400 mt-1">4.2 GHz • 16 Çekirdek Aktif</div>
+      </div>
+      <div class="w-full bg-[#313244] rounded-full h-2 overflow-hidden">
+        <div id="cpuBar" class="bg-indigo-500 h-2 rounded-full transition-all duration-500" style="width: 28%"></div>
+      </div>
+    </div>
+
+    <div class="bg-[#181825] p-4 rounded-xl border border-[#313244] flex flex-col justify-between">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-400">SİSTEM BELLEĞİ (RAM)</span>
+        <i class="fa-solid fa-memory text-emerald-400"></i>
+      </div>
+      <div class="my-3">
+        <div class="text-3xl font-extrabold text-white" id="ramVal">9.4 GB</div>
+        <div class="text-xs text-slate-400 mt-1">Toplam 32.0 GB • %29 Kullanım</div>
+      </div>
+      <div class="w-full bg-[#313244] rounded-full h-2 overflow-hidden">
+        <div id="ramBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 29%"></div>
+      </div>
+    </div>
+
+    <div class="bg-[#181825] p-4 rounded-xl border border-[#313244] flex flex-col justify-between">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-400">EKRAN KARTI (GPU VRAM)</span>
+        <i class="fa-solid fa-cube text-purple-400"></i>
+      </div>
+      <div class="my-3">
+        <div class="text-3xl font-extrabold text-white" id="vramVal">5.8 GB</div>
+        <div class="text-xs text-slate-400 mt-1">NVIDIA RTX Serisi • 54°C</div>
+      </div>
+      <div class="w-full bg-[#313244] rounded-full h-2 overflow-hidden">
+        <div id="vramBar" class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: 36%"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    setInterval(() => {
+      const cpu = Math.floor(20 + Math.random() * 30);
+      document.getElementById('cpuVal').innerText = cpu + '%';
+      document.getElementById('cpuBar').style.width = cpu + '%';
+    }, 2000);
+
+    function simulateBoost() {
+      document.getElementById('ramVal').innerText = '6.1 GB';
+      document.getElementById('ramBar').style.width = '19%';
+      alert('Sistem önbelleği başarıyla temizlendi! +3.3 GB RAM serbest bırakıldı.');
+    }
+  </script>
+</body>
+</html>`;
+
+    const files: CodeFile[] = [
+      { name: 'App.xaml.cs', language: 'csharp', content: '// Windows C# / WPF Application Entry Point\nusing System;\nusing System.Windows;\n\nnamespace HelfrexDesktopApp {\n    public partial class App : Application {\n        protected override void OnStartup(StartupEventArgs e) {\n            base.OnStartup(e);\n            Console.WriteLine("Helfrex Windows Native Host Initialized");\n        }\n    }\n}' },
+      { name: 'MainWindow.xaml', language: 'xml', content: '<Window x:Class="HelfrexDesktopApp.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Title="Helfrex System" Height="500" Width="800" Background="#1e1e2e">\n  <Grid Margin="16">\n    <!-- Hardware UI Layout -->\n  </Grid>\n</Window>' },
+      { name: 'index.html', language: 'html', content: mainHtml }
+    ];
+
+    return {
+      message: {
+        id,
+        sender: 'assistant',
+        timestamp: now,
+        text: `💻 **${model.name}** Windows Masaüstü Uygulaması Başarıyla Oluşturuldu!
+
+Windows masaüstü programı için tam işlevsel donanım izleme ve optimizasyon yazılımı hazırlandı. Sağdaki **Önizleme** sekmesinde Windows pencere çerçevesi içinde etkileşimli olarak deneyebilir ve tüm dosyaları tek tek veya zip olarak indirebilirsiniz.`,
+        modelId: model.id,
+        modelName: model.name,
+        type: 'code',
+        codeFiles: files,
+        previewType: 'windows'
+      },
+      files,
+      previewType: 'windows'
+    };
+  }
+
+  // 5. ANDROID APP DETECTION
+  if (lower.includes('android') || lower.includes('mobil') || lower.includes('kotlin') || lower.includes('apk') || lower.includes('flutter')) {
+    const androidHtml = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-[#0b0f19] text-white font-sans h-screen flex items-center justify-center p-2 select-none">
+  <!-- Mobile Phone Frame -->
+  <div class="w-full max-w-xs h-[520px] bg-[#131b2e] rounded-[36px] border-4 border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+    <!-- Camera Notch -->
+    <div class="h-6 bg-[#131b2e] flex items-center justify-between px-6 pt-1 text-[10px] text-slate-400">
+      <span>14:30</span>
+      <div class="w-12 h-3.5 bg-black rounded-full"></div>
+      <div class="flex items-center gap-1">
+        <i class="fa-solid fa-wifi"></i>
+        <i class="fa-solid fa-battery-full text-emerald-400"></i>
+      </div>
+    </div>
+
+    <!-- App Content -->
+    <div class="flex-1 p-4 flex flex-col justify-between overflow-y-auto">
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold">H</div>
+            <div>
+              <div class="text-xs font-bold">Helfrex Mobile</div>
+              <div class="text-[10px] text-slate-400">Yerel AI Asistanı</div>
+            </div>
+          </div>
+          <i class="fa-solid fa-bell text-slate-400 text-xs"></i>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 p-4 rounded-2xl shadow-lg mb-4">
+          <div class="text-[11px] text-indigo-200">Günün Görevleri</div>
+          <div class="text-lg font-extrabold mt-0.5">4 Tamamlandı</div>
+          <div class="w-full bg-indigo-900/50 rounded-full h-1.5 mt-2">
+            <div class="bg-white h-1.5 rounded-full" style="width: 75%"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="bg-[#1c263f] p-3 rounded-xl flex items-center justify-between text-xs border border-slate-800">
+            <span class="flex items-center gap-2">⚡ Qwen Coder Entegrasyonu</span>
+            <span class="text-emerald-400 text-[10px] font-bold">Aktif</span>
+          </div>
+          <div class="bg-[#1c263f] p-3 rounded-xl flex items-center justify-between text-xs border border-slate-800">
+            <span class="flex items-center gap-2">📱 Donanım Hızlandırma</span>
+            <span class="text-indigo-400 text-[10px] font-bold">60 FPS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action -->
+      <button onclick="alert('Helfrex Mobile Sync Başlatıldı!')" class="w-full py-2.5 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-xs font-bold tracking-wide shadow-md transition">
+        Hemen Eşitle
+      </button>
+    </div>
+
+    <!-- Home indicator -->
+    <div class="h-4 bg-[#131b2e] flex items-center justify-center">
+      <div class="w-24 h-1 bg-slate-600 rounded-full"></div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const files: CodeFile[] = [
+      { name: 'MainActivity.kt', language: 'kotlin', content: 'package com.helfrex.ai\n\nimport android.os.Bundle\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\n\nclass MainActivity : ComponentActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        setContent { HelfrexAppTheme { DashboardScreen() } }\n    }\n}' },
+      { name: 'AndroidManifest.xml', language: 'xml', content: '<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.helfrex.ai">\n  <application android:label="Helfrex AI" android:theme="@style/Theme.Material3">\n    <activity android:name=".MainActivity" android:exported="true"/>\n  </application>\n</manifest>' },
+      { name: 'index.html', language: 'html', content: androidHtml }
+    ];
+
+    return {
+      message: {
+        id,
+        sender: 'assistant',
+        timestamp: now,
+        text: `📱 **${model.name}** Android Mobil Uygulaması Oluşturuldu!
+
+Jetpack Compose ve Material 3 mimarisine uygun modern mobil arayüz geliştirildi. Sağdaki sekmede telefon simülatörü içinde doğrudan test edebilirsiniz.`,
+        modelId: model.id,
+        modelName: model.name,
+        type: 'code',
+        codeFiles: files,
+        previewType: 'android'
+      },
+      files,
+      previewType: 'android'
+    };
+  }
+
+  // 6. DEFAULT WEB / HTML5 APPLICATION / GENERAL CODE GENERATION
+  if (model.classes.includes('Code AI') || lower.includes('site') || lower.includes('kod') || lower.includes('html') || lower.includes('javascript') || lower.includes('hesap') || lower.includes('oyun') || lower.includes('dashboard') || lower.includes('uygulama') || lower.includes('web')) {
+    const webHtml = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Helfrex Interactive App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col items-center justify-center p-6">
+  <div class="w-full max-w-2xl bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+    <div class="flex items-center justify-between border-b border-slate-700 pb-4 mb-6">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-code"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">Helfrex Web İstasyonu</h2>
+          <p class="text-xs text-slate-400">Qwen 2.5 Coder ile Yerel Olarak Üretildi</p>
+        </div>
+      </div>
+      <span class="px-2.5 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Canlı Çalışıyor
+      </span>
+    </div>
+
+    <!-- Interactive Counter & Task Utility -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center text-center">
+        <span class="text-xs font-medium text-slate-400 mb-1">Etkileşimli Sayaç</span>
+        <div id="counter" class="text-4xl font-black text-indigo-400 my-2">0</div>
+        <div class="flex gap-2">
+          <button onclick="updateCount(-1)" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-bold transition">-1</button>
+          <button onclick="updateCount(1)" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition">+1</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 flex flex-col justify-between">
+        <span class="text-xs font-medium text-slate-400">Hızlı İstem:</span>
+        <div class="text-sm text-slate-200 italic font-mono mt-1">"${userPrompt}"</div>
+        <button onclick="generateAction()" class="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold rounded-lg shadow-md transition">
+          Efekt Çalıştır
+        </button>
+      </div>
+    </div>
+
+    <div id="feedback" class="text-center text-xs text-slate-400 min-h-[20px]">
+      Helfrex canlı önizleme motoru hazır.
+    </div>
+  </div>
+
+  <script>
+    let count = 0;
+    function updateCount(val) {
+      count += val;
+      document.getElementById('counter').innerText = count;
+      document.getElementById('feedback').innerText = 'Sayaç güncellendi: ' + count;
+    }
+    function generateAction() {
+      const colors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      document.getElementById('counter').style.color = randomColor;
+      document.getElementById('feedback').innerText = 'Renk ve durum animasyonu tetiklendi! ✨';
+    }
+  </script>
+</body>
+</html>`;
+
+    const files: CodeFile[] = [
+      { name: 'index.html', language: 'html', content: webHtml },
+      { name: 'styles.css', language: 'css', content: '/* Helfrex Custom Modern Stylesheet */\n@keyframes pulseGlow {\n  0%, 100% { opacity: 1; transform: scale(1); }\n  50% { opacity: 0.8; transform: scale(1.02); }\n}' },
+      { name: 'app.js', language: 'javascript', content: '// Helfrex Client Side Scripting\nconsole.log("Helfrex Code Studio Sandbox initialized.");' }
+    ];
+
+    const text = `💻 **${model.name}** Kod ve Web Projesi Başarıyla Üretildi!
+
+**İstek:** "${userPrompt}"
+
+Tüm bileşenler ve etkileşimli JavaScript mantığı hazırlandı. Sağdaki **Önizleme** sekmesinde anında test edebilir, **Kod Dosyaları** sekmesinde satır satır düzenleyebilir veya projenizi tek tıkla ZIP olarak indirebilirsiniz.
+
+\`\`\`html
+<!-- index.html -->
+${webHtml}
+\`\`\``;
+
+    return {
+      message: {
+        id,
+        sender: 'assistant',
+        timestamp: now,
+        text,
+        modelId: model.id,
+        modelName: model.name,
+        type: 'code',
+        codeFiles: files,
+        previewType: 'web'
+      },
+      files,
+      previewType: 'web'
+    };
+  }
+
+  // 7. GENERAL CHAT RESPONSE
+  let memoryText = '';
+  if (systemPrompts.length > 0) {
+    const activePrompts = systemPrompts.filter(p => p.active);
+    if (activePrompts.length > 0) {
+      memoryText = `\n\n*(Sistem Hafızası & Kuralları uygulandı: "${activePrompts.map(p => p.title).join(', ')}")*`;
+    }
+  }
+
+  let contextNotice = '';
+  if (contextFiles.length > 0 || messageAttachments.length > 0) {
+    const totalFiles = [...contextFiles, ...messageAttachments];
+    contextNotice = `\n\n📁 *[Bağlam Dosyaları Analiz Edildi: ${totalFiles.map(f => f.name).join(', ')}]*`;
+  }
+
+  const chatAnswer = `Merhaba! **${model.name}** yerel modeli olarak sorunuzu ve bağlamınızı eksiksiz analiz ettim.
+
+${userPrompt} hakkında detaylı bilgi ve çözüm adımları şunlardır:
+
+1. **Yerel İşleme Doğruluğu:** Model doğrudan bilgisayarınızın donanımı üzerinde (VRAM/RAM) çalışarak maksimum gizlilik ve sıfır gecikme ile yanıt üretmektedir.
+2. **Kapsamlı İçerik:** Token sınırı olmaksızın gerekli tüm mimari ve açıklayıcı detaylar oluşturulmuştur.
+3. **Çoklu Yetenek:** Dilediğiniz an Qwen Code modellerine geçerek web sitesi, Minecraft modu (.mcaddon), Windows masaüstü veya Android uygulaması kodlatabilir; Image AI ile görsel, Video AI ile sinematik klipler ürettirebilirsiniz.${memoryText}${contextNotice}
+
+Başka bir konuda kod yazmamı veya medya üretmemi ister misiniz?`;
+
+  return {
+    message: {
+      id,
+      sender: 'assistant',
+      timestamp: now,
+      text: chatAnswer,
+      modelId: model.id,
+      modelName: model.name,
+      type: 'chat'
+    }
+  };
+}

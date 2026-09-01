@@ -1,0 +1,6 @@
+{
+  "name": "Helfrex AI",
+  "description": "Yerel yapay zeka modelleri (Qwen Code, Chat, Image, Video), donanım analizi, canlı kod önizleme ve model yönetim istasyonu",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
